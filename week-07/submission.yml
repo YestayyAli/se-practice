@@ -15,7 +15,7 @@ week: "07"
 student:
   name: Yestay Ali
   student_id: 24B030255          # as in KBTU records, e.g. 00X000000
-  github: YestayAli              # your GitHub username, the one that owns the repo
+  github: YestayyAli              # your GitHub username, the one that owns the repo
 
 assistant:
   tool: Claude              # the assistant that generated the tests: Bolt.new, ChatGPT, Claude, Copilot, ...
