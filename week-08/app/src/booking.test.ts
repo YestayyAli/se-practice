@@ -130,3 +130,21 @@ describe('canBook — AC5: the decision does not change the bookings', () => {
     expect(req.bookings).toEqual(before);
   });
 });
+
+describe('Week 08 regression tests', () => {
+  test('BUG-A AC4: 570–600 touches 480–570 before and 600–660 after, so it is Available', () => {
+    const bookings: Interval[] = [
+      { start: 480, end: 570 },
+      { start: 600, end: 660 },
+    ];
+    expect(canBook(request(570, 600, { bookings }))).toBe(true);
+  });
+
+  test('BUG-B AC5: 720–780 touches nothing, is Available, and the bookings stay unchanged', () => {
+    const req = request(720, 780);
+    const before = structuredClone(req.bookings);
+
+    expect(canBook(req)).toBe(true);
+    expect(req.bookings).toEqual(before);
+  });
+});
