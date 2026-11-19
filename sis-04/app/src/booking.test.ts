@@ -1,6 +1,8 @@
 import { describe, test, expect } from 'vitest';
 // The real module the page uses: App.tsx does `import { canBook } from './booking'`.
-import { canBook, type BookingRequest, type Interval } from './booking';
+import { canBook, checkRoom, type BookingRequest, type Interval } from './booking';
+import { filterRooms } from './filter';
+import type { Room } from './rooms';
 
 // Fixed time: now is a plain number (09:00). No clock is read anywhere.
 const NOW = 540;
@@ -40,11 +42,11 @@ describe('canBook — AC1: valid interval after the current time', () => {
 });
 
 describe('canBook — AC2: at most 120 minutes', () => {
-  test('T06 AC2: 720–840 is exactly 120 minutes and is allowed', () => {
+  test('T06 B1 AC2: 720–840 is exactly 120 minutes and is allowed', () => {
     expect(canBook(request(720, 840))).toBe(true);
   });
 
-  test('T07 AC2: 720–841 is 121 minutes and is rejected', () => {
+  test('T07 B2 AC2: 720–841 is 121 minutes and is rejected', () => {
     expect(canBook(request(720, 841))).toBe(false);
   });
 });
@@ -56,7 +58,7 @@ describe('canBook — AC3: blocked room', () => {
 });
 
 describe('canBook — AC4: overlaps rejected, touching allowed', () => {
-  test('T01 AC4: 660–720 touches the end of the 600–660 booking', () => {
+  test('T01 B3 AC4: 660–720 touches the end of the 600–660 booking', () => {
     expect(canBook(request(660, 720))).toBe(true);
   });
 
@@ -64,7 +66,7 @@ describe('canBook — AC4: overlaps rejected, touching allowed', () => {
     expect(canBook(request(570, 600))).toBe(true);
   });
 
-  test('T09 AC4: 630–690 partly overlaps 600–660', () => {
+  test('T09 B4 AC4: 630–690 partly overlaps 600–660', () => {
     expect(canBook(request(630, 690))).toBe(false);
   });
 
@@ -146,5 +148,46 @@ describe('Week 08 regression tests', () => {
 
     expect(canBook(req)).toBe(true);
     expect(req.bookings).toEqual(before);
+  });
+});
+
+// SIS 04 — checkRoom (F3, F5). Fixed catalog for these tests only, independent of the demo ROOMS.
+const CHECK_ROOMS: Room[] = [
+  { id: 'free', name: 'Free room', capacity: 10, equipment: ['projector', 'video'], blocked: false, bookings: [] },
+  { id: 'busy', name: 'Busy room', capacity: 10, equipment: ['projector'], blocked: false, bookings: [{ start: 600, end: 660 }] },
+  { id: 'shut', name: 'Blocked room', capacity: 10, equipment: ['projector', 'video'], blocked: true, bookings: [] },
+];
+
+// 10:00–11:00 requested at 09:00: in the future and 60 minutes (AC1, AC2 hold).
+const SLOT = { start: 600, end: 660, now: 540 };
+
+describe('checkRoom — the chosen room decides', () => {
+  test('F3 AC3: 10:00–11:00 in the blocked room is never available, even with no bookings', () => {
+    expect(checkRoom(CHECK_ROOMS, 'shut', SLOT)).toBe(false);
+  });
+
+  test('F5: the same 10:00–11:00 is available in the free room and not in the busy room (its own 10:00–11:00 booking)', () => {
+    expect(checkRoom(CHECK_ROOMS, 'free', SLOT)).toBe(true);
+    expect(checkRoom(CHECK_ROOMS, 'busy', SLOT)).toBe(false);
+  });
+
+  test('checkRoom: an unknown room id is not available', () => {
+    expect(checkRoom(CHECK_ROOMS, 'no-such-room', SLOT)).toBe(false);
+  });
+
+  test('AC5: checking three rooms does not change the rooms or their bookings', () => {
+    const before = structuredClone(CHECK_ROOMS);
+    checkRoom(CHECK_ROOMS, 'free', SLOT);
+    checkRoom(CHECK_ROOMS, 'busy', SLOT);
+    checkRoom(CHECK_ROOMS, 'shut', SLOT);
+    expect(CHECK_ROOMS).toEqual(before);
+    expect(checkRoom(CHECK_ROOMS, 'free', SLOT)).toBe(true);
+  });
+
+  test('INT F2 F3: filterRooms for 8 people with video returns free and shut; checkRoom on them gives true, then false', () => {
+    const found = filterRooms(CHECK_ROOMS, { attendees: 8, equipment: ['video'] });
+    expect(found.map(r => r.id)).toEqual(['free', 'shut']);
+    expect(checkRoom(CHECK_ROOMS, found[0].id, SLOT)).toBe(true);
+    expect(checkRoom(CHECK_ROOMS, found[1].id, SLOT)).toBe(false);
   });
 });
