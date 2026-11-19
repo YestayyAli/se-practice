@@ -17,7 +17,7 @@
 | Assistant (tool) | Claude (Anthropic), Claude app — a fresh chat for the analysis |
 | Assistant model | claude-opus-5-5 |
 | Starting point | week-08 |
-| Baseline commit | 089d484 |
+| Baseline commit | 043394b |
 | Language (ts or js) | ts |
 | Vitest version | 3.2.7 |
 | Where I ran the tests | Claude's cloud workspace (Linux, Node 22), the same `npx vitest run` as on a laptop |
