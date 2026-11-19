@@ -1,0 +1,15 @@
+' diagrams/before.puml — the starting point (week-08 app), as committed in the baseline.
+@startuml
+title Before: week-08 app (baseline)
+skinparam componentStyle rectangle
+
+component "main.tsx" as Main
+component "App.tsx\n(page: 2 rooms + types,\ntoMinutes/fmt, blocked checkbox,\nstart<end check, result)" as App
+component "booking.ts\n(canBook: AC1–AC5)" as Booking
+component "booking.test.ts\n(23 tests)" as Tests
+
+Main --> App
+App --> Booking : canBook()
+Tests --> Booking : canBook()
+note right of App : room data, form state, a validation rule\nand the rendering all live in one component
+@enduml

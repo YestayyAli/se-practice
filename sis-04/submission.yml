@@ -1,0 +1,62 @@
+# SIS #04 — the declaration. FACTS ONLY: every explanation stays in report.md.
+#
+# Fill this in LAST, after your final run of the checker, then validate it:
+#     python tests/check_sis.py
+#     python tests/validate_submission.py
+#
+# Your checker numbers are re-run by the instructor at the head of your pull request.
+# Numbers that do not match what that commit produces cost the whole workflow criterion.
+# A FAIL you report honestly — here and under known_fails — costs nothing extra.
+#
+# Format rules: two spaces for indentation, never tabs. Leave the keys exactly as they are.
+
+schema: 1
+assignment: "sis-04"            # do not edit
+
+student:
+  name: Yestay Ali                         # as in the university register
+  student_id: 24B030255                   # e.g. 00X000000
+  group: "practice time 18:00-19:00"                        # your group code, as in the timetable
+  github: YestayyAli                       # username only, not a URL
+
+assistant:
+  tool: Claude.ai                         # the assistant you worked with, e.g. ChatGPT (web), Claude.ai, Claude Code
+  model: claude-opus-5-5                        # exactly as in report.md section 1, or: not displayed
+
+project:                        # exactly as in report.md section 1
+  start_from: week-08                   # week-08 | week-07 | sis-03 | starter
+  baseline_commit: 043394b              # the commit that brought the starting point in unchanged
+  language: ts                     # ts | js
+  vitest: 3.2.7                       # the version from the "RUN  v..." line, e.g. 3.2.4
+
+counts:                         # the checker prints most of these under --json "measured"
+  rooms: 5                        # rooms in ROOMS (src/rooms)
+  tests_original: 23               # tests in the baseline run, report.md 1.1 (0 if there were none)
+  tests_final: 33                  # tests in your final test files
+  risks: 6                        # rows in report.md 3.1
+  exchanges: 3                    # complete exchanges in report.md section 8
+
+checker:                        # from your LAST run of python tests/check_sis.py
+  pass: 33
+  fail: 0
+  error: 0
+  commit: 53ea64c                       # the commit you ran it at: git rev-parse --short HEAD
+                                # (normally the commit just before you commit this file — that is fine)
+  known_fails: []               # every check still FAIL or ERROR, as in report.md section 9, e.g. [E3]
+
+review_findings:
+  # Three or more. One line each, and each one names what it is about: an F-rule (F1-F5),
+  # an AC (AC1-AC6), a boundary test (B1-B6), INT, or a file.
+  # Worthless:        "The refactoring improved the code"
+  # Worth everything: "F2: the assistant's filter used equipment.some(), so a room with only a projector
+  #                    matched projector + whiteboard; the F2 test caught it"
+  - "F3: the page's own 'Room blocked' checkbox decided blocked, so a blocked room was Available when unticked; checkRoom now reads Room.blocked"
+  - "F5: the useEffect reset showed the old A-101 result with the B-204 name for one render; clearing the result in each change handler fixed it (found in the browser, not by a test)"
+  - "F2: changing every() to some() in filterRooms failed F1, F2 and B5 (some() on an empty selection matches no room), so the tests protect the ALL rule"
+  - "src/rooms.ts: the assistant proposed data tests on the demo ROOMS; rejected, tests use a fixed catalog inside the test file"
+
+honesty:
+  baseline_unchanged: yes           # yes | no   app/ at the baseline commit is the starting point as it was
+  runs_unedited: yes                # yes | no   every run in report.md is pasted from a real terminal
+  no_invented_metrics: yes          # yes | no   every number in section 7 was measured as the row says
+  ai_usage_disclosed: yes           # yes | no   AI_USAGE.md and section 8 are complete
