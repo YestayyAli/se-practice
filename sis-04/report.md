@@ -765,4 +765,12 @@ export function checkRoom(
      incorrect? What did you personally verify? How did tests influence your engineering
      decisions? What would you improve next? -->
 
-(write here)
+I provided the AI with a file map, the existing rules (AC1–AC6), feature requirements (F1–F5), key restrictions (no login, payments, databases or internet requests), and the full `App.tsx` and `booking.ts` files. For example, by comparing rule F3 with the `App.tsx` code, the AI identified that the "Room blocked" checkbox violated the rule because unchecking it made a blocked room appear available. I asked the AI to identify risks and create a step-by-step plan, not write code, to avoid unnecessary changes to the existing implementation.
+
+Some of the helpful suggestions included the `filterRooms` and `checkRoom` code. I verified them with tests and incorporated them almost as-is. Regarding unnecessary advice, the AI suggested tests for the demo data in `ROOMS`, but according to the course rules, the tests check the rules on a fixed catalog within the test file. Therefore, I rejected this advice.
+
+I verified every risk identified by the AI in the browser and in the code. I selected A-101 and clicked "check," then switched to B-204, and the previous "Available" result remained visible, even though no check had been performed for B-204. I also intentionally modified the filter, changing "every" to "some" and ">=" to ">", which caused tests F1, F2 and B5 to fail, confirming that they enforce the requirements, and then restored the code.
+
+I wrote the tests first, they failed (red), then the code passed the test (green). So I knew that the new code was solving the right rule, and not something else.
+
+I would add "@testing-library/react" so that F4 and F5 are checked automatically, since the tests only checked the functions, and no one checks the page automatically. The bug with the old result was found only in the browser.
