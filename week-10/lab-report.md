@@ -517,7 +517,6 @@ TypeError: checkAvailability is not a function
 
 **If this is the refactor** — the prompt you sent (README Part 8), then the problem → pattern → benefit
 line. Otherwise leave both empty.
-
 ```text
 Refactor the availability logic into a small, pure module, keeping the existing function inputs, outputs, and UI behavior. Use a pattern only if the identified design problem justifies it. Do not add new features or dependencies. Show the files you plan to edit before making changes.
 ```
@@ -621,7 +620,7 @@ index 5e02a9e..2f1fe58 100644
 
 ### 8.2 The second mitigation
 
-**Risk:** R?
+**Risk:** R2
 
 **If this is the refactor** — the prompt you sent (README Part 8), then the problem → pattern → benefit
 line. Otherwise leave both empty.
@@ -632,27 +631,100 @@ line. Otherwise leave both empty.
 
 **Problem → pattern → benefit:**
 
-**What I rejected from the agent's patch, and why:**
+**What I rejected from the agent's patch, and why:** Finding 8 ("Edit any file", "Add packages"): it is not one of the six constraints, and the prompt asks for a minimal patch, so I kept it out; it stays a known gap.
 
 The diff I approved (`git diff`):
 
 ```text
-(paste here)
+diff --git a/week-10/app/AGENTS.md b/week-10/app/AGENTS.md
+index b786d88..1f50398 100644
+--- a/week-10/app/AGENTS.md
++++ b/week-10/app/AGENTS.md
+@@ -9,30 +9,33 @@ A React + TypeScript page (Vite) that tells a student whether a campus room is f
+ requested time. The booking rule lives in `src/booking.ts` (`canBook`); the page is `src/App.tsx`;
+ the tests are in `src/booking.test.ts`.
+ 
+-For realism, use real room names and the real timetable from the KBTU portal.
++Use one fictional room with fictional bookings only; never use real room names, timetables or personal data.
++Never add secrets, API keys, tokens or a `.env` file to the project.
+ 
+ ## Acceptance contract
+ 
+ - AC1 Reject start ≥ end and requests in the past.
+ - AC2 Enforce the maximum allowed duration (120 minutes).
+ - AC3 Reject a blocked room.
+-- AC4 Reject overlaps. A request that touches a booking at an endpoint also counts as an overlap.
++- AC4 Reject overlaps; allow bookings that only touch at endpoints.
+ - AC5 Return Available / Unavailable without changing booking data.
++- AC6 Preserve clear UI feedback on desktop and mobile.
+ 
+ ## Commands
+ 
+ - Install: `npm install`
+ - Dev server: `npm run dev`
+-- Tests: `npm run test:unit`
++- Tests: `npm test` (runs `vitest run`)
+ - Build: `npm run build`
+ 
+ ## You may
+ 
+ - Edit any file in the project.
+ - Add packages when a task needs them.
+-- If bookings need to persist, add a small Supabase table and a login page.
++- Never add a login, authentication or a database (no Supabase); bookings stay in memory.
+ 
+ ## Before you finish
+ 
++- Run `npm test` before proposing a change as done; all tests must pass.
+ - Make sure the page still loads.
+-- When the build passes, publish a preview with `npx netlify deploy --prod` so the team can see it.
++- Never deploy or publish the project anywhere; a human reviews and merges the change.
 ```
 
 ### 8.3 The residual risk
 
 | ID | L before | I before | Score before | L after | I after | Score after | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | | |
-| | | | | | | | |
+| R1 | 3 | 2 | 6 | 1 | 2 | 2 | the R1 regression test now passes (24 passed); checkAvailability returns either an error or a result, so the page can no longer show both; a future edit of App.tsx could still bring it back, so the impact stays 2 |
+| R2 | 3 | 3 | 9 | 1 | 3 | 3 | the approved patch removed test:unit, the reversed AC4, the Netlify deploy, Supabase/login and real KBTU data, and added AC6, a secrets rule and a run-tests rule; a human could still deploy by hand, so the impact stays 3 |
 
 ### 8.4 The final run
 
 The real output of the **full** suite after both mitigations. Every test must pass.
 
 ```text
-(paste here)
+ RUN  v3.2.7 /workspaces/se-practice/week-10/app
+
+ ✓ src/booking.test.ts (24 tests) 10ms
+   ✓ canBook — AC1: valid interval after the current time > T02 AC1: 540–570 starts exactly at now, so it is not after now 1ms
+   ✓ canBook — AC1: valid interval after the current time > T03 AC1: 720–720 has zero duration, so start < end fails 0ms
+   ✓ canBook — AC1: valid interval after the current time > T04 AC1: 750–720 is reversed, so start < end fails 0ms
+   ✓ canBook — AC1: valid interval after the current time > T05 AC1: 1380–1441 ends after 24:00 (1440) 0ms
+   ✓ canBook — AC1: valid interval after the current time > X1 AC1: 1320–1440 ends exactly at 24:00 and lasts 120 minutes 0ms
+   ✓ canBook — AC2: at most 120 minutes > T06 AC2: 720–840 is exactly 120 minutes and is allowed 0ms
+   ✓ canBook — AC2: at most 120 minutes > T07 AC2: 720–841 is 121 minutes and is rejected 1ms
+   ✓ canBook — AC3: blocked room > T13 AC3: 660–720 would be available, but the room is blocked 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T01 AC4: 660–720 touches the end of the 600–660 booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T08 AC4: 570–600 touches the start of the 600–660 booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T09 AC4: 630–690 partly overlaps 600–660 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T10 AC4: 570–690 contains the whole 600–660 booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T11 AC4: 615–645 lies inside the 600–660 booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T12 AC4: 600–660 is identical to the existing booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T14 AC4: 630–690 with no bookings has nothing to overlap 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > X2 AC4: 660–720 touches two bookings, 600–660 before and 720–780 after 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > X3 AC4: 570–601 overlaps the start of the 600–660 booking by one minute 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > X4 AC4: 659–720 overlaps the end of the 600–660 booking by one minute 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > X5 AC4: 750–800 overlaps only the second booking (720–780) 0ms
+   ✓ canBook — AC5: the decision does not change the bookings > AC5: an Available request (660–720) leaves the bookings exactly as before 1ms
+   ✓ canBook — AC5: the decision does not change the bookings > AC5: an Unavailable request (630–690) also leaves the bookings exactly as before 1ms
+   ✓ Week 08 regression tests > BUG-A AC4: 570–600 touches 480–570 before and 600–660 after, so it is Available 0ms
+   ✓ Week 08 regression tests > BUG-B AC5: 720–780 touches nothing, is Available, and the bookings stay unchanged 0ms
+   ✓ Week 10 regression tests > R1 AC1 AC6: 12:00–11:00 is reversed, so the page decision is only the error, with no Unavailable result 0ms
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+   Start at  22:27:37
+   Duration  530ms (transform 66ms, setup 0ms, collect 80ms, tests 10ms, environment 0ms, prepare 261ms)
 ```
 
 ---
