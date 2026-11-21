@@ -315,14 +315,60 @@ what is missing.
 What you sent, exactly (the deck's prompt):
 
 ```text
-(paste here)
+Review AGENTS.md and project documentation only. Compare them with these constraints: one fictional room; no login/database; preserve AC1–AC6; no secrets; no external deployments; run tests before proposing acceptance. Report missing or conflicting rules. Draft a minimal patch to AGENTS.md, but wait for my approval before applying it.
 ```
 
 The assistant's answer, pasted unedited:
 
-```text
-(paste here)
-```
+````text
+I reviewed only AGENTS.md (the copy from `week-10/provided/`, identical to your `app/AGENTS.md`) and the project documentation available to me: `week-10/README.md` §3 (scope and AC1–AC6) and `app/package.json` (scripts). There is no README inside `app/`. I have not edited your files.
+
+## Findings
+
+| # | Constraint | AGENTS.md line | Problem |
+|---|---|---|---|
+| 1 | One fictional room | line 12 "For realism, use real room names and the real timetable from the KBTU portal." | **Conflicting.** Asks for real data. No rule that there is one room or that the data is fictional. |
+| 2 | No login / database | line 33 "If bookings need to persist, add a small Supabase table and a login page." | **Conflicting.** Permits both. Nothing forbids them. |
+| 3 | Preserve AC1–AC6 | line 19 AC4 "…touches a booking at an endpoint also counts as an overlap." | **Conflicting.** The contract says "allow bookings that only touch at endpoints". |
+| 4 | Preserve AC1–AC6 | Acceptance contract section | **Missing.** AC6 "Preserve clear UI feedback on desktop and mobile" is not listed. |
+| 5 | No secrets | — | **Missing.** No rule about secrets, keys, tokens or `.env`. |
+| 6 | No external deployments | line 38 "publish a preview with `npx netlify deploy --prod`" | **Conflicting.** Instructs a production deploy. `netlify` is also not in package.json. |
+| 7 | Run tests before acceptance | line 26 "Tests: `npm run test:unit`"; "Before you finish" | **Conflicting + missing.** `test:unit` is not a script in package.json (scripts: dev, build, preview, test). No rule requires running the tests before a change is proposed as done. |
+| 8 | (scope, not one of the six) | lines 31–32 "Edit any file in the project." / "Add packages when a task needs them." | **Too broad.** Not a direct conflict with the six constraints. Not included in the minimal patch below; your decision whether to restrict it. |
+
+## Draft patch (not applied, waiting for your approval)
+
+8 lines changed, all headings kept. Every command it names exists in package.json (`npm install`, `npm run dev`, `npm test`, `npm run build`).
+
+````diff
+@@ ## Project
+-For realism, use real room names and the real timetable from the KBTU portal.
++Use one fictional room with fictional bookings only; never use real room names, timetables or personal data.
++Never add secrets, API keys, tokens or a `.env` file to the project.
+@@ ## Acceptance contract
+-- AC4 Reject overlaps. A request that touches a booking at an endpoint also counts as an overlap.
++- AC4 Reject overlaps; allow bookings that only touch at endpoints.
+ - AC5 Return Available / Unavailable without changing booking data.
++- AC6 Preserve clear UI feedback on desktop and mobile.
+@@ ## Commands
+-- Tests: `npm run test:unit`
++- Tests: `npm test` (runs `vitest run`)
+@@ ## You may
+-- If bookings need to persist, add a small Supabase table and a login page.
++- Never add a login, authentication or a database (no Supabase); bookings stay in memory.
+@@ ## Before you finish
++- Run `npm test` before proposing a change as done; all tests must pass.
+ - Make sure the page still loads.
+-- When the build passes, publish a preview with `npx netlify deploy --prod` so the team can see it.
++- Never deploy or publish the project anywhere; a human reviews and merges the change.
+````
+
+Mapping: finding 1 → line 12; 2 → Supabase line; 3 → AC4; 4 → AC6; 5 → secrets line; 6 → deploy line; 7 → Tests command and "Run `npm test` before…".
+
+**Verification and uncertainty:** I applied this draft only to a scratch copy in my own workspace, not to your repository, and ran the provided `tests/check_audit.py` on that copy. A1–A3 and C1–C6 passed there, with 8 lines changed. I have not run your test suite. The "never" lines placed under "## You may" read slightly oddly. Moving them would change more lines, so I kept them where they are.
+
+Please tell me which findings you approve, reject or modify. I will not consider the patch accepted until you do.
+````
 
 ### 6.2 Findings and my decisions
 
@@ -331,17 +377,63 @@ One row per missing or conflicting rule the answer reported, plus any it missed.
 
 | # | Rule or line in AGENTS.md | Missing / conflicting | Decision | Why |
 | --- | --- | --- | --- | --- |
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
-| 4 | | | | |
+| 1 | line 12 "use real room names and the real timetable from the KBTU portal" | conflicting: one fictional room, no real data | approve | the line asks for real data; README §3 says fictional bookings and no real personal information; the new line states one fictional room |
+| 2 | line 33 "add a small Supabase table and a login page" | conflicting: no login/database | approve | it permits both; the replacement forbids a login, authentication and a database |
+| 3 | line 19 AC4 "touches ... also counts as an overlap" | conflicting: preserve AC1–AC6 | approve | the contract allows touching at endpoints, and my tests T01 and T08 expect Available for touching requests |
+| 4 | Acceptance contract: AC6 not listed | missing: preserve AC1–AC6 | approve | README §3 has AC6 (clear UI feedback on desktop and mobile); one added line |
+| 5 | no rule about secrets | missing: no secrets | approve | nothing stops an agent from adding keys or a .env; one added line forbids secrets, API keys, tokens and .env |
+| 6 | line 38 "publish a preview with npx netlify deploy --prod" | conflicting: no external deployments | approve | --prod is a production deploy, and netlify is not in package.json; replaced by a rule never to deploy or publish |
+| 7 | line 26 "Tests: npm run test:unit"; no rule to run tests before finishing | conflicting + missing: run tests before acceptance | approve | my §2.1 run gave Missing script: "test:unit"; npm test exists and passes; added a rule to run npm test before proposing a change as done |
+| 8 | lines 31–32 "Edit any file", "Add packages" | too broad, not one of the six constraints | reject | the prompt asks for a minimal patch; this is not a conflict with the six constraints, so I keep it out of the patch and leave it as a known gap |
 
 ### 6.3 The approved patch
 
 `git diff app/AGENTS.md`, after you applied only what you approved:
 
 ```text
-(paste here)
+diff --git a/week-10/app/AGENTS.md b/week-10/app/AGENTS.md
+index b786d88..1f50398 100644
+--- a/week-10/app/AGENTS.md
++++ b/week-10/app/AGENTS.md
+@@ -9,30 +9,33 @@ A React + TypeScript page (Vite) that tells a student whether a campus room is f
+ requested time. The booking rule lives in `src/booking.ts` (`canBook`); the page is `src/App.tsx`;
+ the tests are in `src/booking.test.ts`.
+ 
+-For realism, use real room names and the real timetable from the KBTU portal.
++Use one fictional room with fictional bookings only; never use real room names, timetables or personal data.
++Never add secrets, API keys, tokens or a `.env` file to the project.
+ 
+ ## Acceptance contract
+ 
+ - AC1 Reject start ≥ end and requests in the past.
+ - AC2 Enforce the maximum allowed duration (120 minutes).
+ - AC3 Reject a blocked room.
+-- AC4 Reject overlaps. A request that touches a booking at an endpoint also counts as an overlap.
++- AC4 Reject overlaps; allow bookings that only touch at endpoints.
+ - AC5 Return Available / Unavailable without changing booking data.
++- AC6 Preserve clear UI feedback on desktop and mobile.
+ 
+ ## Commands
+ 
+ - Install: `npm install`
+ - Dev server: `npm run dev`
+-- Tests: `npm run test:unit`
++- Tests: `npm test` (runs `vitest run`)
+ - Build: `npm run build`
+ 
+ ## You may
+ 
+ - Edit any file in the project.
+ - Add packages when a task needs them.
+-- If bookings need to persist, add a small Supabase table and a login page.
++- Never add a login, authentication or a database (no Supabase); bookings stay in memory.
+ 
+ ## Before you finish
+ 
++- Run `npm test` before proposing a change as done; all tests must pass.
+ - Make sure the page still loads.
+-- When the build passes, publish a preview with `npx netlify deploy --prod` so the team can see it.
++- Never deploy or publish the project anywhere; a human reviews and merges the change.
 ```
 
 ---
