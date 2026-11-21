@@ -499,13 +499,18 @@ TypeError: checkAvailability is not a function
 
 | View | Width | What I checked | Result | Screenshot |
 | --- | --- | --- | --- | --- |
-| Desktop | | | | `evidence/ui-desktop.png` |
-| Mobile | | | | `evidence/ui-mobile.png` |
+| Desktop | full browser window, about 2560 px | 11:00–12:00 → Available; 12:00–11:00 → only the error "The end time must be after the start time.", no "Unavailable" (the R1 fix); 10:30–11:30 → Unavailable; fields in one row, text readable, nothing cut off or overlapping | pass | `evidence/ui-desktop.png` |
+| Mobile | 400 px (Chrome DevTools device mode, 400 × 845) | the same three cases; fields stack in one column, the button and the green Available / red messages are readable, nothing cut off | pass | `evidence/ui-mobile.png` |
 
 ### 7.3 Tests and checks I did not run
 
 <!-- Name each one and why. "None" only if it is true. -->
--
+- No automated test of App.tsx or of the page: the project has no component-testing library, and adding one would be a new dependency, so the UI was checked by hand only (§7.2).
+- npm run lint: there is no lint script and no ESLint (§2.1).
+- npm run test:unit: the script does not exist; I used npm test / npx vitest run instead.
+- No CI run: there is no workflow in .github/workflows/.
+- No check on a real phone, only Chrome DevTools at 400 px; no check in other browsers (Firefox, Safari).
+- npm audit was not run, so dependencies were not checked for vulnerabilities.
 
 ---
 
