@@ -513,23 +513,110 @@ TypeError: checkAvailability is not a function
 
 ### 8.1 The first mitigation
 
-**Risk:** R?
+**Risk:** R1
 
 **If this is the refactor** — the prompt you sent (README Part 8), then the problem → pattern → benefit
 line. Otherwise leave both empty.
 
 ```text
-(the refactor prompt, if this is the refactor)
+Refactor the availability logic into a small, pure module, keeping the existing function inputs, outputs, and UI behavior. Use a pattern only if the identified design problem justifies it. Do not add new features or dependencies. Show the files you plan to edit before making changes.
 ```
 
-**Problem → pattern → benefit:**
+**Problem → pattern → benefit:** The availability decision was split between App.tsx check() and canBook, inside a React component, so it could not be tested and its error branch did not stop (R1). No named pattern was justified (one policy, one data shape), so I used an extracted pure function, checkAvailability in src/booking.ts, which now gives one tested decision that returns either an error or a result while canBook stays unchanged.
 
-**What I rejected from the agent's patch, and why:**
+**What I rejected from the agent's patch, and why:** Nothing inside the diff was out of scope, so I rejected nothing from it. I checked that it leaves out the stale comment (R3), the two rooms (R4) and the ! in ROOMS.find (R6); those stay open in the register.
 
 The diff I approved (`git diff`):
 
 ```text
-(paste here)
+diff --git a/week-10/app/src/App.tsx b/week-10/app/src/App.tsx
+index 2bb53e7..34bf4e1 100644
+--- a/week-10/app/src/App.tsx
++++ b/week-10/app/src/App.tsx
+@@ -1,5 +1,5 @@
+ import { useState } from 'react';
+-import { canBook } from './booking';
++import { checkAvailability } from './booking';
+ 
+ // Starter for students with no Week 06 project. The availability decision lives INSIDE this
+ // component on purpose: Task 1 of Practice #07 is to extract it into src/booking.ts as
+@@ -13,10 +13,6 @@ const ROOMS: Room[] = [
+   { id: 'b204', name: 'Room B-204', blocked: false, bookings: [] },
+ ];
+ 
+-const toMinutes = (value: string) => {
+-  const [h, m] = value.split(':').map(Number);
+-  return h * 60 + m;
+-};
+ const fmt = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+ 
+ export default function App() {
+@@ -32,22 +28,9 @@ export default function App() {
+   const room = ROOMS.find(r => r.id === roomId)!;
+ 
+   function check() {
+-    setResult(null);
+-    if (!start || !now || (!end && !endOfDay)) {
+-      setError('Fill in the current time, the start and the end.');
+-      return;
+-    }
+-    const s = toMinutes(start);
+-    const e = endOfDay ? 1440 : toMinutes(end);
+-    const n = toMinutes(now);
+-    if (!(s < e)) {
+-      setError('The end time must be after the start time.');
+-    } else {
+-      setError('');
+-    }
+-
+-    const ok = canBook({ start: s, end: e, now: n, blocked, bookings: room.bookings });
+-    setResult(ok);
++    const decision = checkAvailability({ start, end, now, endOfDay, blocked, bookings: room.bookings });
++    setError(decision.error);
++    setResult(decision.result);
+   }
+ 
+   return (
+diff --git a/week-10/app/src/booking.ts b/week-10/app/src/booking.ts
+index 5e02a9e..2f1fe58 100644
+--- a/week-10/app/src/booking.ts
++++ b/week-10/app/src/booking.ts
+@@ -28,3 +28,35 @@ export function canBook({ start, end, now, blocked, bookings }: {
+   // keep the room's list current with the slot that was just found free
+   return true;
+ }
++
++// The page's decision for one request, as a pure function (Week 10, R1).
++// It turns the form values into minutes, validates them, and returns either an
++// error or a result, never both. canBook above is unchanged.
++export type AvailabilityForm = {
++  start: string; // 'HH:MM'
++  end: string; // 'HH:MM', ignored when endOfDay is true
++  now: string; // 'HH:MM'
++  endOfDay: boolean; // true when the request ends at 24:00
++  blocked: boolean;
++  bookings: Interval[];
++};
++
++export type AvailabilityResult = { result: boolean | null; error: string };
++
++const toMinutes = (value: string) => {
++  const [h, m] = value.split(':').map(Number);
++  return h * 60 + m;
++};
++
++export function checkAvailability({ start, end, now, endOfDay, blocked, bookings }: AvailabilityForm): AvailabilityResult {
++  if (!start || !now || (!end && !endOfDay)) {
++    return { result: null, error: 'Fill in the current time, the start and the end.' };
++  }
++  const s = toMinutes(start);
++  const e = endOfDay ? 1440 : toMinutes(end);
++  const n = toMinutes(now);
++  if (!(s < e)) {
++    return { result: null, error: 'The end time must be after the start time.' };
++  }
++  return { result: canBook({ start: s, end: e, now: n, blocked, bookings }), error: '' };
++}
 ```
 
 ### 8.2 The second mitigation
