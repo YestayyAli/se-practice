@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 // The real module the page uses: App.tsx does `import { canBook } from './booking'`.
-import { canBook, type BookingRequest, type Interval } from './booking';
+import { canBook, checkAvailability, type BookingRequest, type Interval } from './booking';
 
 // Fixed time: now is a plain number (09:00). No clock is read anywhere.
 const NOW = 540;
@@ -146,5 +146,20 @@ describe('Week 08 regression tests', () => {
 
     expect(canBook(req)).toBe(true);
     expect(req.bookings).toEqual(before);
+  });
+});
+
+describe('Week 10 regression tests', () => {
+  test('R1 AC1 AC6: 12:00–11:00 is reversed, so the page decision is only the error, with no Unavailable result', () => {
+    expect(
+      checkAvailability({
+        start: '12:00',
+        end: '11:00',
+        now: '09:00',
+        endOfDay: false,
+        blocked: false,
+        bookings: [{ start: 600, end: 660 }],
+      }),
+    ).toEqual({ result: null, error: 'The end time must be after the start time.' });
   });
 });

@@ -442,10 +442,57 @@ index b786d88..1f50398 100644
 
 ### 7.1 The regression test fails before the mitigation
 
-The risk it covers: **R?**. The real run, with the new test failing:
+The risk it covers: **R1**. The real run, with the new test failing:
 
 ```text
-(paste here)
+ RUN  v3.2.7 /workspaces/se-practice/week-10/app
+
+ ❯ src/booking.test.ts (24 tests | 1 failed) 22ms
+   ✓ canBook — AC1: valid interval after the current time > T02 AC1: 540–570 starts exactly at now, so it is not after now 6ms
+   ✓ canBook — AC1: valid interval after the current time > T03 AC1: 720–720 has zero duration, so start < end fails 1ms
+   ✓ canBook — AC1: valid interval after the current time > T04 AC1: 750–720 is reversed, so start < end fails 0ms
+   ✓ canBook — AC1: valid interval after the current time > T05 AC1: 1380–1441 ends after 24:00 (1440) 0ms
+   ✓ canBook — AC1: valid interval after the current time > X1 AC1: 1320–1440 ends exactly at 24:00 and lasts 120 minutes 0ms
+   ✓ canBook — AC2: at most 120 minutes > T06 AC2: 720–840 is exactly 120 minutes and is allowed 0ms
+   ✓ canBook — AC2: at most 120 minutes > T07 AC2: 720–841 is 121 minutes and is rejected 0ms
+   ✓ canBook — AC3: blocked room > T13 AC3: 660–720 would be available, but the room is blocked 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T01 AC4: 660–720 touches the end of the 600–660 booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T08 AC4: 570–600 touches the start of the 600–660 booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T09 AC4: 630–690 partly overlaps 600–660 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T10 AC4: 570–690 contains the whole 600–660 booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T11 AC4: 615–645 lies inside the 600–660 booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T12 AC4: 600–660 is identical to the existing booking 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > T14 AC4: 630–690 with no bookings has nothing to overlap 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > X2 AC4: 660–720 touches two bookings, 600–660 before and 720–780 after 1ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > X3 AC4: 570–601 overlaps the start of the 600–660 booking by one minute 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > X4 AC4: 659–720 overlaps the end of the 600–660 booking by one minute 0ms
+   ✓ canBook — AC4: overlaps rejected, touching allowed > X5 AC4: 750–800 overlaps only the second booking (720–780) 0ms
+   ✓ canBook — AC5: the decision does not change the bookings > AC5: an Available request (660–720) leaves the bookings exactly as before 1ms
+   ✓ canBook — AC5: the decision does not change the bookings > AC5: an Unavailable request (630–690) also leaves the bookings exactly as before 0ms
+   ✓ Week 08 regression tests > BUG-A AC4: 570–600 touches 480–570 before and 600–660 after, so it is Available 0ms
+   ✓ Week 08 regression tests > BUG-B AC5: 720–780 touches nothing, is Available, and the bookings stay unchanged 0ms
+   × Week 10 regression tests > R1 AC1 AC6: 12:00–11:00 is reversed, so the page decision is only the error, with no Unavailable result 7ms
+     → checkAvailability is not a function
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/booking.test.ts > Week 10 regression tests > R1 AC1 AC6: 12:00–11:00 is reversed, so the page decision is only the error, with no Unavailable result
+TypeError: checkAvailability is not a function
+ ❯ src/booking.test.ts:155:7
+    153|   test('R1 AC1 AC6: 12:00–11:00 is reversed, so the page decision is only the error, with no Unavailable result', () => {
+    154|     expect(
+    155|       checkAvailability({
+       |       ^
+    156|         start: '12:00',
+    157|         end: '11:00',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  16:21:38
+   Duration  357ms (transform 71ms, setup 0ms, collect 69ms, tests 22ms, environment 0ms, prepare 85ms)
 ```
 
 ### 7.2 The manual UI check
