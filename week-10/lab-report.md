@@ -140,18 +140,92 @@ Which rules in its summary are wrong for this project, and how you know:
 
 Where it ran, and how you made sure it could not edit:
 
-<!-- Write below this line -->
+<!-- Write below this line --> 
+- Claude Opus 5.5 in a claude.ai chat. It read the project only from a zip I uploaded and has no access to my repository or Codespace, so it could not edit files. After the review, git status showed "nothing to commit, working tree clean".
+
 
 What you sent, exactly (the deck's prompt):
 
 ```text
-(paste here)
+Act as a cautious software reviewer. Inspect this Smart Campus Room Availability Checker WITHOUT editing files. Identify risks in correctness, security, privacy, reliability, maintainability, and agent operations. For each risk, cite the exact file/function or missing check, explain the impact, suggest a way to verify it, and state uncertainty. Do not invent test results.
 ```
 
 The assistant's answer, pasted unedited:
 
 ```text
-(paste here)
+I reviewed the project read-only, using the copy of `week-08/app` from the `se-practice-week-08.zip` you shared, plus `AGENTS.md` from `Week_10.zip`. You told me both are unchanged in `week-10/app`. I have no access to your repository or Codespace and edited nothing. I ran no commands for this review, so no test results are reported below.
+
+**1. Correctness / AC6: error and result shown together**
+- Where: `src/App.tsx`, `check()`. When `!(s < e)` it calls `setError(...)` but does not `return`, so `canBook` still runs and `setResult(false)` is set.
+- Impact: for start 12:00 and end 11:00 the page shows "The end time must be after the start time." and "Unavailable" at the same time. That is mixed feedback (AC6), and the AC1 check lives in two places.
+- Verify: run `npm run dev`, enter start 12:00 and end 11:00, click Check. Or read lines 37–47 of `check()`.
+- Uncertainty: low for the code path. Whether a grader counts two messages as "unclear" is a judgment call.
+
+**2. Correctness / scope: two rooms, and the room's own `blocked` field is ignored**
+- Where: `src/App.tsx`, `ROOMS` has `Room A-101` and `Room B-204`. Each has `blocked: false`, but `check()` passes the separate checkbox state `blocked`, never `room.blocked`.
+- Impact: the scope says one room. `room.blocked` is dead data, so a future "block B-204" edit in `ROOMS` would silently have no effect on AC3.
+- Verify: read `ROOMS` and the `canBook({...})` call in `check()`. Set `blocked: true` on a room and see that the page still answers Available.
+- Uncertainty: low.
+
+**3. Correctness: "now" is typed by the user, not read from a clock**
+- Where: `src/App.tsx`, the `now` state, default `'09:00'`.
+- Impact: AC1 "reject requests in the past" only holds against whatever the user types. Setting "Current time" to 00:00 makes any time today bookable.
+- Verify: set Current time to 00:00 and start to 08:00 when the real time is later.
+- Uncertainty: medium. This may be a deliberate design choice for deterministic tests (the test file says "No clock is read anywhere"). It is a risk in real use, not in the contract tests.
+
+**4. Maintainability / agent operations: stale comment in `canBook`**
+- Where: `src/booking.ts`, the comment `// keep the room's list current with the slot that was just found free` just before `return true`.
+- Impact: there is no code under it. It describes the old BUG-B behaviour (pushing into `bookings`). An agent reading it may "restore" the mutation and break AC5.
+- Verify: read `canBook`. The AC5 and BUG-B tests would catch a reintroduced push.
+- Uncertainty: low that the comment is stale. Medium that an agent would act on it.
+
+**5. Maintainability: duplicated types and validation**
+- Where: `src/booking.ts` exports `BookingRequest` but `canBook` declares its own inline parameter type. `src/App.tsx` redeclares `Interval`. The `start < end` check exists in both `App.tsx check()` and `canBook`.
+- Impact: two sources of truth. A change to one (for example the duration limit or the shape of a booking) can drift from the other without a compile error.
+- Verify: compare the declarations. Change `BookingRequest` and see that `canBook` is unaffected.
+- Uncertainty: low.
+
+**6. Agent operations: AGENTS.md names a test command that does not exist**
+- Where: `AGENTS.md`, "Tests: `npm run test:unit`"; `package.json` scripts are `dev`, `build`, `preview`, `test`.
+- Impact: an agent following the playbook cannot run the tests and may report success anyway.
+- Verify: `npm run test:unit` (your §2.1 run).
+- Uncertainty: low.
+
+**7. Agent operations / correctness: AGENTS.md reverses AC4 and omits AC6**
+- Where: `AGENTS.md`, "A request that touches a booking at an endpoint also counts as an overlap."
+- Impact: contradicts the contract ("allow bookings that only touch at endpoints") and tests T01, T08, X2, BUG-A. An agent may "fix" `canBook` to match the playbook and break four tests. Without AC6 it has no reason to check the UI.
+- Verify: compare with `week-10/README.md` §3 and `src/booking.test.ts`.
+- Uncertainty: low.
+
+**8. Security / agent operations: AGENTS.md instructs a production deploy**
+- Where: `AGENTS.md`, "publish a preview with `npx netlify deploy --prod`".
+- Impact: `--prod` deploys to production, not a preview. It needs Netlify credentials, so an agent may ask for or store a token. It contradicts "no external production services".
+- Verify: read the line. `package.json` has no Netlify dependency or config.
+- Uncertainty: low for the conflict. I have not checked how your environment stores credentials.
+
+**9. Privacy: AGENTS.md asks for real KBTU data**
+- Where: `AGENTS.md`, "use real room names and the real timetable from the KBTU portal". Also "add a small Supabase table and a login page".
+- Impact: a real timetable may contain teacher or group names. A login adds personal data and an external database. Both conflict with the scope (fictional data, no login, no database).
+- Verify: read the lines. The current code contains only fictional data.
+- Uncertainty: low for the conflict. The current code itself has no personal data.
+
+**10. Reliability: no lint, CI, hooks or UI tests**
+- Where: missing: `lint` script / ESLint config, `.github/workflows/`, pre-commit hooks, any test of `App.tsx`.
+- Impact: nothing checks a change automatically. Risk 1 is not covered by any test because `booking.test.ts` tests only `canBook`.
+- Verify: list the files in `app/`. Search the tests for `App`.
+- Uncertainty: low.
+
+**11. Reliability: non-null assertion on room lookup**
+- Where: `src/App.tsx`, `ROOMS.find(r => r.id === roomId)!`.
+- Impact: if `roomId` ever does not match (for example after a room is removed from `ROOMS`), `room.bookings` throws and the page goes blank.
+- Verify: change the initial `useState('a101')` to an unknown id.
+- Uncertainty: medium-low. It is unreachable through the current `<select>`.
+
+**12. Security (low): no unsafe rendering or network found**
+- Where: `src/App.tsx`, `src/main.tsx`. No `dangerouslySetInnerHTML`, no `fetch`, no keys or `.env`.
+- Impact: low today. The main security risk comes from AGENTS.md (risks 8 and 9), not from the code.
+- Verify: search `src/` for `dangerouslySetInnerHTML`, `fetch`, `key`, `token`.
+- Uncertainty: I reviewed only the files in the zip. I did not audit dependencies (`npm audit` not run).
 ```
 
 ### 3.2 Challenging the AI's claims
@@ -162,11 +236,12 @@ inspected** is what you opened or ran yourself. **Label:** `confirmed`, `plausib
 
 | # | The AI's claim (short) | Category | What I inspected | Label | Why |
 | --- | --- | --- | --- | --- | --- |
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| 1 |check() shows the start≥end error but still runs canBook | Correctness | src/App.tsx check(), lines 43–50 | confirmed | line 44 calls setError but there is no return (unlike the empty-field branch, lines 37–38), so line 49 still calls canBook and line 50 shows "Unavailable" next to the error |
+| 2 | two rooms instead of one; room.blocked is never used | Correctness | src/App.tsx ROOMS (lines 11–14) and canBook call (line 49) | confirmed | ROOMS has A-101 and B-204; line 49 passes the checkbox state `blocked`, while bookings come from room.bookings, so room.blocked is never read |
+| 3 | stale BUG-B comment in canBook | Maintainability | src/booking.ts canBook, lines 28–29 | confirmed | line 28 says "keep the room's list current..." but line 29 is just return true; the push it describes was removed in the BUG-B fix |
+| 4 | AGENTS.md names npm run test:unit, which does not exist | Agent operations | package.json "scripts" (lines 6–11) and my §2.1 run | confirmed | scripts are dev, build, preview, test; no test:unit; my run gave Missing script: "test:unit" |
+| 5 | AGENTS.md asks for real KBTU data and a login page | Privacy | AGENTS.md line 12 (KBTU portal) and line 33 (Supabase + login); README §3 | confirmed | both lines are there; README §3 says fictional bookings, no login and no database, no real personal information |
+| 6 | page crashes if roomId is not in ROOMS | Reliability | src/App.tsx line 32 ROOMS.find(...)! and the <select> | plausible | the ! assertion is there with no check, but the select only offers ids from ROOMS, so I could not reach the crash without editing code |
 
 ---
 
