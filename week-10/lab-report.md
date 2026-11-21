@@ -743,12 +743,12 @@ its files and its commands.
 
 | Rule | What I require |
 | --- | --- |
-| Isolation | |
-| Permitted files | |
-| Commands | |
-| Prohibited actions | |
-| Required evidence | |
-| Before merging or deploying | |
+| Isolation | The agent works only on its own branch (agent/<task>) in a separate git worktree or Codespace, never on main or week-10, and it never merges its own work. |
+| Permitted files | Only week-10/app/src/booking.ts, week-10/app/src/App.tsx and week-10/app/src/booking.test.ts (new tests only); AGENTS.md, package.json, package-lock.json and the lab files only after my explicit approval. |
+| Commands | npm install (from the lockfile), npm test or npx vitest run, npm run build, and npm run dev for a local check; not npm run test:unit or npm run lint, because they do not exist. |
+| Prohibited actions | No deploy or publish (no netlify, vercel or --prod), no secrets, tokens or .env, no login or database, no real KBTU data, no new dependencies, no deleting or weakening existing tests, no push to main and no merge. |
+| Required evidence | The git diff of every changed file, the full npx vitest run output with every test passing, the npm run build output, a short review note naming the risk IDs (R1–R7) it touched, and no claim that something ran without the pasted output. |
+| Before merging or deploying | I review the diff line by line, re-run npm test and npm run build myself, check the UI at desktop and phone width (AC6), run python tests/check_audit.py, and approve the PR by hand; nothing is ever deployed. |
 
 ### 9.2 Optional — the deck's checklist prompt (not graded)
 
