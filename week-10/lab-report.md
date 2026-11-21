@@ -254,18 +254,20 @@ categories. **Score = L × I.** **Component** is a path inside `app/` or `missin
 
 | ID | Category | Cause → event → consequence | Component | Evidence | Status | L | I | Score | Mitigation | Owner | Verification |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| R1 | | | | | | | | | | | |
-| R2 | | | | | | | | | | | |
-| R3 | | | | | | | | | | | |
-| R4 | | | | | | | | | | | |
-| R5 | | | | | | | | | | | |
+| R1 | Correctness | check() validates start ≥ end but does not stop → canBook still runs → the page shows the error and "Unavailable" together, unclear feedback (AC6) | src/App.tsx check() | lines 43–50: setError on line 44 has no return, unlike lines 37–38; claim 1 in §3.2 | confirmed | 3 | 2 | 6 | refactor the availability decision into a pure function in src/booking.ts that returns either an error or a result, and render only that | me (Yestay) | regression test R1 fails before and passes after; UI checked at desktop and phone width |
+| R2 | Agent operations | AGENTS.md is written against the scope → an agent follows it → runs a missing test command, breaks AC4, deploys to production, adds a login and real KBTU data | AGENTS.md | test:unit missing (§2.1), AC4 reversed, no AC6, npx netlify deploy --prod, Supabase + login, real KBTU timetable (§2.3) | confirmed | 3 | 3 | 9 | minimal approved patch of AGENTS.md (Part 6) | me (Yestay) | checker A2, A3 and C1–C6 pass; npm test runs green |
+| R3 | Maintainability | a stale BUG-B comment stays in canBook → an agent trusts it → re-adds bookings.push and breaks AC5 | src/booking.ts canBook | line 28 describes a push, line 29 is only return true; claim 3 in §3.2 | confirmed | 2 | 2 | 4 | delete the stale comment | me (Yestay) | AC5 and BUG-B tests stay green |
+| R4 | Correctness | ROOMS holds two rooms and check() ignores room.blocked → the page breaks the one-room scope and a room blocked in data is still bookable (AC3) | src/App.tsx ROOMS | lines 11–14 have A-101 and B-204; line 49 passes the checkbox blocked, not room.blocked; claim 2 in §3.2 | confirmed | 2 | 2 | 4 | keep one fictional room and use its blocked field | me (Yestay) | manual UI check; a test of the page if one is added |
+| R5 | Reliability | no CI, no lint and no test of App.tsx → nothing checks a change automatically → a page bug like R1 reaches review unnoticed | missing: CI workflow, lint script and a test of App.tsx | no .github/workflows, no "lint" script (§2.1), booking.test.ts tests only canBook | confirmed | 2 | 2 | 4 | add a CI workflow that runs npm test and npm run build | me (Yestay) | CI log on every push |
+| R6 | Reliability | ROOMS.find(...)! has no check → a roomId not in ROOMS → room.bookings throws and the page goes blank | src/App.tsx | line 32 uses the ! assertion; the select only offers ids from ROOMS; claim 6 in §3.2 | plausible | 1 | 2 | 2 | handle a missing room instead of using ! | me (Yestay) | change the initial roomId to an unknown id and load the page |
+| R7 | Correctness | "now" is typed by the user, not read from a clock → a user sets an early "now" → a request in the past is shown as Available (AC1) | src/App.tsx | the now state defaults to '09:00' and is editable; the tests fix NOW = 540 on purpose | plausible | 2 | 2 | 4 | read the current time for the page and keep now as a parameter in canBook | me (Yestay) | set Current time to 00:00 and check a past start |
 
 ### 4.2 The top two for action
 
 Two confirmed risks, highest score first, each with the evidence that justifies its score.
 
-1. **R?** —
-2. **R?** —
+1. **R2** — 3 × 3 = 9: AGENTS.md tells an agent to run npm run test:unit, which does not exist (§2.1), to treat touching bookings as overlaps against AC4, to deploy with npx netlify deploy --prod, and to add a login and real KBTU data. An agent follows the file every time, and the damage is a production deploy or a broken contract.
+2. **R1** — 3 × 2 = 6: src/App.tsx check() sets the start ≥ end error on line 44 without return, so canBook still runs on line 49 and the page shows the error and "Unavailable" together. It happens every time the end is before the start, but no booking data is changed, so the impact is moderate.
 
 ---
 
@@ -278,28 +280,31 @@ what is missing.
 
 | Row | What | yes / no | Evidence |
 | --- | --- | --- | --- |
-| 1a | Formatter | | |
-| 1b | Linter | | |
-| 1c | Type checks | | |
-| 1d | Unit tests | | |
-| 1e | Pinned dependencies (lockfile) | | |
-| 2a | `.env.example` | | |
-| 2b | Architecture notes | | |
-| 2c | `AGENTS.md` | | |
-| 3a | CI | | |
-| 3b | Pre-commit hooks | | |
-| 3c | Integration checks | | |
-| 3d | Reviewable evidence | | |
+| 1a | Formatter | no | no Prettier config in app/ and no "prettier" in package.json |
+| 1b | Linter | no | no ESLint config and no "eslint" in package.json; npm run lint is missing (§2.1) |
+| 1c | Type checks | yes | app/tsconfig.json and "typescript" in devDependencies; npm run build runs tsc |
+| 1d | Unit tests | yes | src/booking.test.ts (23 tests) and "vitest" in devDependencies |
+| 1e | Pinned dependencies (lockfile) | yes | app/package-lock.json is committed |
+| 2a | `.env.example` | no | no .env.example in app/ |
+| 2b | Architecture notes | no | no README in app/; only three lines in AGENTS.md "Project", and AGENTS.md is partly wrong |
+| 2c | `AGENTS.md` | yes | app/AGENTS.md, copied from provided/ in Part 0 |
+| 3a | CI | no | no .github/workflows/ in the repository |
+| 3b | Pre-commit hooks | no | no .husky/, lint-staged, simple-git-hooks or .pre-commit-config.yaml |
+| 3c | Integration checks | no | booking.test.ts tests only canBook; nothing tests App.tsx or the page |
+| 3d | Reviewable evidence | no | no CI log and no PR template that an agent's change must attach |
 
 ### 5.2 The level and the gaps
 
-**Level:** (0, 1, 2 or 3 — by the 80% rule)
+**Level:** 0
 
 **Missing evidence for the next level:**
 
 <!-- Name the rows and what would have to exist. Then one or two lines on the README's accuracy
      and the folder layout. -->
--
+- Level 1 needs 4 of 5 rows (80%); I have 3 of 5 (1c, 1d, 1e). One more is enough: a formatter (Prettier with a config) or a linter (ESLint with a "lint" script in package.json).
+- Level 2 then needs all three: a .env.example, architecture notes (a README in app/ saying which module does what), and AGENTS.md (already there).
+- Level 3 needs CI in .github/workflows/, pre-commit hooks, a test of the page, and a PR template or CI log as evidence.
+- README: there is no README in app/. The folder layout is clear: the rule is in src/booking.ts, the page in src/App.tsx, the tests in src/booking.test.ts.
 
 ---
 
