@@ -361,7 +361,7 @@ I reviewed only AGENTS.md (the copy from `week-10/provided/`, identical to your 
  - Make sure the page still loads.
 -- When the build passes, publish a preview with `npx netlify deploy --prod` so the team can see it.
 +- Never deploy or publish the project anywhere; a human reviews and merges the change.
-````
+```
 
 Mapping: finding 1 → line 12; 2 → Supabase line; 3 → AC4; 4 → AC6; 5 → secrets line; 6 → deploy line; 7 → Tests command and "Run `npm test` before…".
 
