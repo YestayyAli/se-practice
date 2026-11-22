@@ -766,7 +766,7 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 ## 10. Release decision and conclusion
 
-**Decision:** GO / CONDITIONAL / NO-GO
+**Decision:** CONDITIONAL
 
 <!-- Keep one word above. GO is not allowed while any confirmed risk still scores 6 or more.
      Then 80-150 words, in your own words, without the assistant: why this decision, from the
@@ -778,3 +778,4 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
      but no test covers App.tsx, so a regression there would be invisible." -->
 
 <!-- Write your conclusion below this line -->
+R2 (AGENTS.md told the agent to deploy, named a wrong test command and reversed AC4) dropped from 3 × 3 = 9 to 1 × 3 = 3 after the approved patch of AGENTS.md. R1 (the page showed the error and "Unavailable" together) dropped from 3 × 2 = 6 to 1 × 2 = 2 after the refactor into checkAvailability. R3, R4 and R5 are still open (each scores 2 × 2 = 4), but each has an owner and a control. R3 is covered by tests: if an agent adds the push back, the AC5 and BUG-B tests will fail. For R5, there is no CI, so I run npm test and npm run build myself before every push. I'm still not sure about R4 (two rooms instead of one), because none of the tests cover App.tsx, and I only checked it manually.
