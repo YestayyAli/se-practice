@@ -32,11 +32,11 @@ script, or such a tool in `package.json`?). **Result:** `pass`, `fail`, `missing
 
 | Command | Exists | Result | Note |
 | --- | --- | --- | --- |
-| `npx vitest run` | | | |
-| `npm test` | | | |
-| `npm run test:unit` (the test command in `AGENTS.md`) | | | |
-| `npm run build` | | | |
-| `npm run lint` | | | |
+| `npx vitest run` | yes | pass | 23 tests passed |
+| `npm test` | yes | pass | runs `vitest run`, 23 passed |
+| `npm run test:unit` (the test command in `AGENTS.md`) | no | missing | no "test:unit" script in package.json: Missing script: "test:unit" |
+| `npm run build` | yes | pass | `tsc && vite build`, built in 1.15s |
+| `npm run lint` | no | missing | no "lint" script and no ESLint: Missing script: "lint" |
 
 ### 2.2 The baseline test run
 
@@ -760,7 +760,7 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Check | Why it stays |
 | --- | --- |
-| | |
+| none | 31 PASS, 0 FAIL, 0 ERROR |
 
 ---
 
