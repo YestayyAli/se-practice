@@ -1,0 +1,55 @@
+# week-10/submission.yml — your declaration for this lab.
+# Facts only. Check it with: python tests/validate_submission.py
+
+schema: 1
+week: "10"
+
+student:
+  name: Yestay Ali
+  student_id: 24B030255
+  github: YestayyAli
+
+assistant:
+  tool: Claude (claude.ai chat)
+  model: Claude Opus 5.5 (claude-opus-5-5)
+  environment: chat
+
+project:
+  starting_point: week-08
+  baseline_commit: 760bdfb
+  language: ts
+  vitest: 3.2.7
+
+counts:
+  claims_challenged: 6
+  risks_registered: 7
+  risks_confirmed: 5
+  tests_final: 24
+  agents_lines_changed: 8
+
+audit:
+  level: 0
+
+decision:
+  top_two: [R2, R1]
+  mitigated: [R1, R2]
+  release: conditional
+
+checker:
+  pass: 31
+  fail: 0
+  error: 0
+  commit: a3f79d4
+  known_fails: []
+
+review_findings:
+  - R1: the AI said check() in src/App.tsx shows the error and Unavailable together; lines 43-50 have no return after setError - confirmed
+  - R4: the AI said ROOMS has two rooms and room.blocked is unused; src/App.tsx lines 11-14 and 49 show it - confirmed
+  - R6: the AI said the page crashes for an unknown roomId; the ! is on src/App.tsx line 32, but the select only offers ids from ROOMS - plausible
+  - C5: the AI said AGENTS.md tells an agent to run npx netlify deploy --prod; the line was there - confirmed, removed by the approved patch
+
+honesty:
+  review_was_read_only: yes
+  agents_patch_approved_by_me: yes
+  outputs_unedited: yes
+  ai_usage_disclosed: yes
